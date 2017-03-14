@@ -6,21 +6,14 @@ from sys import argv
 
 import lucene
 from java.nio.file import Paths
-from org.apache.lucene.analysis.miscellaneous import LimitTokenCountAnalyzer
-from org.apache.lucene.analysis.standard import StandardAnalyzer
-from org.apache.lucene.document import Document, Field, FieldType
-from org.apache.lucene.index import IndexWriter, IndexWriterConfig, IndexOptions
 from org.apache.lucene.store import SimpleFSDirectory
+from org.apache.lucene.index import IndexWriter, IndexWriterConfig, IndexOptions
+from org.apache.lucene.document import Document, Field, FieldType
+
+from analyzer import build_analyzer
 
 
 INDEX_LOCATION = 'documents.index'
-MAX_TOKEN_COUNT = 1048576
-
-
-def build_analyzer():
-    # TODO add stemming, diacritics
-    analyzer = StandardAnalyzer()
-    return LimitTokenCountAnalyzer(analyzer, MAX_TOKEN_COUNT)  # limit max nr of tokens
 
 
 def build_index(docs_root, store_dir):
@@ -53,7 +46,7 @@ def index_docs(root, writer):
 
     # content
     t2 = FieldType()
-    t2.setStored(False)
+    t2.setStored(True)  # to highlight on search results
     t2.setTokenized(True)  # tokenize words
     t2.setIndexOptions(IndexOptions.DOCS_AND_FREQS_AND_POSITIONS)
 
@@ -67,7 +60,7 @@ def index_docs(root, writer):
             # Read file contents
             doc_path = join(directory, file_name)
             with open(doc_path) as file:
-                contents = unicode(file.read(), 'iso-8859-1')  # TODO: diacritics
+                contents = unicode(file.read(), 'utf-8')  # TODO: diacritics
 
             # Build indexed document
             doc = Document()

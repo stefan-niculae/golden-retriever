@@ -6,14 +6,33 @@ from sys import argv
 
 import lucene
 from java.nio.file import Paths
+from org.apache.lucene.store import SimpleFSDirectory
 from org.apache.lucene.index import DirectoryReader
 from org.apache.lucene.queryparser.classic import QueryParser
 from org.apache.lucene.search import IndexSearcher
-from org.apache.lucene.store import SimpleFSDirectory
+from org.apache.lucene.search.highlight import QueryScorer
+from org.apache.lucene.search.highlight import SimpleSpanFragmenter
+from org.apache.lucene.search.highlight import Highlighter
+from org.apache.lucene.search.highlight import SimpleHTMLFormatter
+from org.apache.lucene.search.highlight import TokenSources
 
-from indexer import INDEX_LOCATION, build_analyzer
+
+from analyzer import build_analyzer
+from indexer import INDEX_LOCATION
 
 MAX_N_DOCS = 50
+FRAGMENT_SIZE = 20
+MAX_N_FRAGMENTS = 50
+MAX_DOC_CHARS_TO_ANALYZE = 10000
+MERGE_CONTIGUOUS_FRAGMENTS = True
+
+
+def build_highlighter(parsed_query):
+    scorer = QueryScorer(parsed_query, 'content')
+    highlighter = Highlighter(SimpleHTMLFormatter(), scorer)
+    fragmenter = SimpleSpanFragmenter(scorer, FRAGMENT_SIZE)
+    highlighter.setTextFragmenter(fragmenter)
+    return highlighter
 
 
 def find_results(query, store_dir):
@@ -23,6 +42,7 @@ def find_results(query, store_dir):
     storage = SimpleFSDirectory(Paths.get(store_dir))
     parsed = QueryParser('content', build_analyzer()).parse(query)
     print 'Parsed query:', str(parsed).replace('content:', '')
+    highlighter = build_highlighter(parsed)
 
     searcher = IndexSearcher(DirectoryReader.open(storage))
     score_docs = searcher.search(parsed, MAX_N_DOCS).scoreDocs
@@ -32,6 +52,13 @@ def find_results(query, store_dir):
         doc = searcher.doc(score_doc.doc)
         print '  ', doc.get('name'),
         print '(in %s)' % doc.get('path')
+
+        content = doc.get('content')
+        stream = TokenSources.getTokenStream('content', content, build_analyzer())
+        fragments = highlighter.getBestTextFragments(stream, content,
+                                                     MERGE_CONTIGUOUS_FRAGMENTS, MAX_N_FRAGMENTS)
+        for fragment in fragments:
+            print '    ', unicode(fragment).replace('B>', 'mark>')
 
 
 if __name__ == '__main__':
