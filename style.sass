@@ -1,0 +1,67 @@
+$light-grey: #cdcdcd
+$medium-grey: #858585
+$gold: #F9BC2E
+$light-gold: rgba(251, 219, 97, .4)
+
+
+.container
+  padding: 6em 0
+  width: 600px !important
+
+h1
+  margin-bottom: 2em
+  text-align: center
+  font-size: 3em
+
+h1, h2
+  font-weight: normal
+
+
+$input-results-space: 5em
+#search-bar
+  margin-bottom: $input-results-space
+  .button
+    background-color: $gold
+    color: white
+
+#results
+  animation: come-down .5s
+  animation-timing-function: ease-out
+
+@keyframes come-down
+  0%
+    opacity: 0
+    transform: translateY(-$input-results-space)
+  50%
+    opacity: 1
+  100%
+    opacity: 1
+    transform: translateY(0)
+
+
+.result
+  margin-bottom: 3em !important
+  border-width: .5px !important
+  .header
+    font-weight: normal
+    margin-bottom: .25em
+
+  .breadcrumb
+    text-transform: uppercase
+    color: $medium-grey
+    .divider
+      margin: 0 .5em
+
+  .body
+    margin-top: 1em
+    font-weight: 300
+    mark
+      background-color: $light-gold
+      padding: 0 .25em
+    .divider
+      &:before, &:after
+        opacity: .65
+      color: $light-grey
+      letter-spacing: 4px
+      font-size: .9em
+      padding: 0 3em
