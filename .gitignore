@@ -2,3 +2,6 @@
 *.index
 
 lib
+
+# big files, for testing
+big

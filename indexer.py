@@ -1,8 +1,9 @@
-#! /usr/local/bin/python
+#! /usr/bin/env python
 
 from os import getcwd, mkdir, walk
 from os.path import join, exists
 from sys import argv
+from textract import process
 
 import lucene
 from java.nio.file import Paths
@@ -52,21 +53,17 @@ def index_docs(root, writer):
 
     for directory, _, file_names in walk(root):
         for file_name in file_names:
-            if not file_name.endswith('.txt'):
-                # TODO: other formats
-                continue
             print ' ', file_name
-
-            # Read file contents
-            doc_path = join(directory, file_name)
-            with open(doc_path) as f:
-                contents = unicode(f.read(), 'utf-8')  # TODO: diacritics
 
             # Build indexed document
             doc = Document()
             doc.add(Field('name', file_name, t1))
             doc.add(Field('path', directory, t1))
-            doc.add(Field('content', contents, t2))
+
+            # Read file contents
+            content = process(join(directory, file_name), 'utf-8')
+            doc.add(Field('content', content, t2))
+
             writer.addDocument(doc)
 
 
