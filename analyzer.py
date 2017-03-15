@@ -1,23 +1,24 @@
 from org.apache.pylucene.analysis import PythonAnalyzer
 from org.apache.lucene.analysis.standard import StandardTokenizer, StandardFilter
 from org.apache.lucene.analysis import LowerCaseFilter, StopFilter
-from org.apache.lucene.analysis.ro import RomanianAnalyzer
-from org.apache.lucene.analysis.snowball import SnowballFilter
-from org.tartarus.snowball.ext import RomanianStemmer
 from org.apache.lucene.analysis.miscellaneous import ASCIIFoldingFilter
+from org.apache.lucene.analysis.ro import RomanianAnalyzer
+from org.tartarus.snowball.ext import RomanianStemmer
+from org.apache.lucene.analysis.snowball import SnowballFilter
 
 
 class Analyzer(PythonAnalyzer):
     def createComponents(self, _):
-        source = StandardTokenizer()
+        tokenizer = StandardTokenizer()
+        stream = StandardFilter(tokenizer)
 
-        stream = StandardFilter(source)
+        # Order of filtering is important
         stream = LowerCaseFilter(stream)  # case independent
-        stream = self.filter_stopwords(stream)  # stopwords
+        stream = self.filter_stopwords(stream)  # ignore stopwords
+        stream = ASCIIFoldingFilter(stream)  # convert diacritics
         stream = SnowballFilter(stream, RomanianStemmer())  # stemming
-        stream = ASCIIFoldingFilter(stream)  # remove diacritics
 
-        return self.TokenStreamComponents(source, stream)
+        return self.TokenStreamComponents(tokenizer, stream)
 
     @staticmethod
     def filter_stopwords(stream):
