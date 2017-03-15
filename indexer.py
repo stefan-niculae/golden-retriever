@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 from os import getcwd, mkdir, walk
-from os.path import join, exists
+from os.path import join, exists, splitext
 from sys import argv
 from textract import process
 
@@ -15,6 +15,8 @@ from analyzer import Analyzer
 
 
 INDEX_LOCATION = 'documents.index'
+DOC_FORMATS = ['.txt', '.pdf', '.html', '.doc', '.docx',
+               '.csv', '.json', '.pptx', '.rtf', '.xls', '.xlsx']
 
 
 def build_index(docs_root, store_dir):
@@ -53,15 +55,20 @@ def index_docs(root, writer):
 
     for directory, _, file_names in walk(root):
         for file_name in file_names:
-            print ' ', file_name
+            name, extension = splitext(file_name)
+            if extension not in DOC_FORMATS:
+                continue  # skip unsupported formats
+
+            file_path = join(directory, file_name)
+            print ' ', file_path
 
             # Build indexed document
             doc = Document()
-            doc.add(Field('name', file_name, t1))
+            doc.add(Field('name', name, t1))
             doc.add(Field('path', directory, t1))
 
             # Read file contents
-            content = process(join(directory, file_name), 'utf-8')
+            content = process(file_path, 'utf-8', method='pdfminer')
             doc.add(Field('content', content, t2))
 
             writer.addDocument(doc)
