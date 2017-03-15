@@ -10,7 +10,7 @@ from org.apache.lucene.store import SimpleFSDirectory
 from org.apache.lucene.index import IndexWriter, IndexWriterConfig, IndexOptions
 from org.apache.lucene.document import Document, Field, FieldType
 
-from analyzer import build_analyzer
+from analyzer import Analyzer
 
 
 INDEX_LOCATION = 'documents.index'
@@ -24,7 +24,7 @@ def build_index(docs_root, store_dir):
         mkdir(store_dir)
     storage = SimpleFSDirectory(Paths.get(store_dir))  # index kept on disk
 
-    config = IndexWriterConfig(build_analyzer())
+    config = IndexWriterConfig(Analyzer())
     config.setOpenMode(IndexWriterConfig.OpenMode.CREATE)  # overwrite existing index
 
     writer = IndexWriter(storage, config)
@@ -59,8 +59,8 @@ def index_docs(root, writer):
 
             # Read file contents
             doc_path = join(directory, file_name)
-            with open(doc_path) as file:
-                contents = unicode(file.read(), 'utf-8')  # TODO: diacritics
+            with open(doc_path) as f:
+                contents = unicode(f.read(), 'utf-8')  # TODO: diacritics
 
             # Build indexed document
             doc = Document()

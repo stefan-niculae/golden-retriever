@@ -10,14 +10,11 @@ from org.apache.lucene.store import SimpleFSDirectory
 from org.apache.lucene.index import DirectoryReader
 from org.apache.lucene.queryparser.classic import QueryParser
 from org.apache.lucene.search import IndexSearcher
-from org.apache.lucene.search.highlight import QueryScorer
-from org.apache.lucene.search.highlight import SimpleSpanFragmenter
-from org.apache.lucene.search.highlight import Highlighter
-from org.apache.lucene.search.highlight import SimpleHTMLFormatter
-from org.apache.lucene.search.highlight import TokenSources
+from org.apache.lucene.search.highlight import QueryScorer, SimpleSpanFragmenter, Highlighter, \
+    SimpleHTMLFormatter, TokenSources
 
 
-from analyzer import build_analyzer
+from analyzer import Analyzer
 from indexer import INDEX_LOCATION
 
 MAX_N_DOCS = 50
@@ -40,7 +37,7 @@ def find_results(query, store_dir):
     For the given `query`, search the index against the 'content' field in the index.
     """
     storage = SimpleFSDirectory(Paths.get(store_dir))
-    parsed = QueryParser('content', build_analyzer()).parse(query)
+    parsed = QueryParser('content', Analyzer()).parse(query)
     print 'Parsed query:', str(parsed).replace('content:', '')
     highlighter = build_highlighter(parsed)
 
@@ -54,11 +51,11 @@ def find_results(query, store_dir):
         print '(in %s)' % doc.get('path')
 
         content = doc.get('content')
-        stream = TokenSources.getTokenStream('content', content, build_analyzer())
+        stream = TokenSources.getTokenStream('content', content, Analyzer())
         fragments = highlighter.getBestTextFragments(stream, content,
                                                      MERGE_CONTIGUOUS_FRAGMENTS, MAX_N_FRAGMENTS)
         for fragment in fragments:
-            print '    ', unicode(fragment).replace('B>', 'mark>')
+            print '    ', unicode(fragment).replace('B>', 'mark>')  # default formatter wraps in <B> tags
 
 
 if __name__ == '__main__':
