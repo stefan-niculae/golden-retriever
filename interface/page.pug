@@ -16,7 +16,7 @@ body
       #search-bar.fluid.ui.action.left.icon.input
         i.search.icon
         input(type='text', placeholder='Enter some terms...')
-        button.ui.button Search
+        button#search.ui.button Search
 
     if tried_to_search
       if parsed_query == ''
@@ -35,14 +35,24 @@ body
                   span.extension=result.extension
 
                 .ui.mini.breadcrumb
-                  for folder in result.path
+                  for folder, index in result.path
                     .section=folder
-                    i.right.angle.icon.divider
+                    if index < result.path|length - 1
+                      i.right.angle.icon.divider
 
                 .body
-                  for fragment in result.fragments
-                    p!=fragment
-                    .ui.horizontal.divider ···
+                  for fragment, index in result.fragments
+                    if index <= 7
+                      p!=fragment
+                      if index <= 6
+                        .ui.horizontal.divider ···
+                    else
+                      .ui.horizontal.divider.extra ···
+                      p.extra!=fragment
+
+                  if result.fragments|length > 7
+                    .see-more.ui.small.basic.button See all
+
         else
           #no-results No results
 

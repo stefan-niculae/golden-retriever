@@ -18,9 +18,9 @@ from analyzer import Analyzer
 from indexer import DEFAULT_INDEX_DIR
 
 MAX_N_DOCS = 50
-FRAGMENT_SIZE = 20
+FRAGMENT_SIZE = 120
 MAX_N_FRAGMENTS = 50
-MAX_DOC_CHARS_TO_ANALYZE = 10000
+MAX_DOC_CHARS_TO_ANALYZE = 1000000
 MERGE_CONTIGUOUS_FRAGMENTS = True
 
 
@@ -41,7 +41,7 @@ class Result(object):
     def __init__(self, file_name, path, fragments):
         self.name, self.extension = splitext(file_name)
         self.path = path.split('/')[1:]  # ignore root doc
-        self.fragments = [unicode(f) for f in fragments]
+        self.fragments = fragments
 
 def find_results(query, searcher):
     """
@@ -60,12 +60,14 @@ def find_results(query, searcher):
         stream = TokenSources.getTokenStream('content', content, Analyzer())
         fragments = highlighter.getBestTextFragments(stream, content,
                         MERGE_CONTIGUOUS_FRAGMENTS, MAX_N_FRAGMENTS)
+        fragments = [unicode(f) for f in fragments]
 
-        results.append(Result(
-            doc.get('name'),
-            doc.get('path'),
-            fragments
-        ))
+        if not ''.join(fragments).strip() == '':
+            results.append(Result(
+                doc.get('name'),
+                doc.get('path'),
+                fragments
+            ))
 
     return parsed, results
 
