@@ -1,8 +1,8 @@
 #! /usr/bin/env python
-
 from os import getcwd
-from os.path import join
+from os.path import join, splitext
 from sys import argv
+from collections import namedtuple
 
 import lucene
 from java.nio.file import Paths
@@ -15,7 +15,7 @@ from org.apache.lucene.search.highlight import QueryScorer, SimpleSpanFragmenter
 
 
 from analyzer import Analyzer
-from indexer import INDEX_LOCATION
+from indexer import DEFAULT_INDEX_DIR
 
 MAX_N_DOCS = 50
 FRAGMENT_SIZE = 20
@@ -32,30 +32,42 @@ def build_highlighter(parsed_query):
     return highlighter
 
 
-def find_results(query, store_dir):
+def build_searcher(index_dir=DEFAULT_INDEX_DIR):
+    storage = SimpleFSDirectory(Paths.get(index_dir))
+    return IndexSearcher(DirectoryReader.open(storage))
+
+
+class Result(object):
+    def __init__(self, file_name, path, fragments):
+        self.name, self.extension = splitext(file_name)
+        self.path = path.split('/')
+        self.fragments = [unicode(f) for f in fragments]
+
+def find_results(query, searcher):
     """
     For the given `query`, search the index against the 'content' field in the index.
     """
-    storage = SimpleFSDirectory(Paths.get(store_dir))
     parsed = QueryParser('content', Analyzer()).parse(query)
-    print 'Parsed query:', str(parsed).replace('content:', '')
     highlighter = build_highlighter(parsed)
 
-    searcher = IndexSearcher(DirectoryReader.open(storage))
     score_docs = searcher.search(parsed, MAX_N_DOCS).scoreDocs
-    print '%d matching documents:' % len(score_docs)
+    results = []
 
     for score_doc in score_docs:
         doc = searcher.doc(score_doc.doc)
-        print '  ', doc.get('name'),
-        print '(in %s)' % doc.get('path')
 
         content = doc.get('content')
         stream = TokenSources.getTokenStream('content', content, Analyzer())
         fragments = highlighter.getBestTextFragments(stream, content,
-                                                     MERGE_CONTIGUOUS_FRAGMENTS, MAX_N_FRAGMENTS)
-        for fragment in fragments:
-            print '    ', unicode(fragment).replace('B>', 'mark>')  # default formatter wraps in <B> tags
+                        MERGE_CONTIGUOUS_FRAGMENTS, MAX_N_FRAGMENTS)
+
+        results.append(Result(
+            doc.get('name'),
+            doc.get('path'),
+            fragments
+        ))
+
+    return parsed, results
 
 
 if __name__ == '__main__':
@@ -63,7 +75,10 @@ if __name__ == '__main__':
         print 'usage: indexer.py <query>'
         exit(1)
 
-    lucene.initVM()
+    index_dir = DEFAULT_INDEX_DIR
+    if len(argv) >= 3:
+        index_dir = argv[2]
 
-    find_results(query=argv[1],
-                 store_dir=join(getcwd(), INDEX_LOCATION))
+    lucene.initVM()
+    print find_results(query=argv[1],
+                       searcher=index_dir)

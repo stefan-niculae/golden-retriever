@@ -1,7 +1,7 @@
 # computed index
 *.index
 
-lib
+lib-*
 
 # big files, for testing
 big

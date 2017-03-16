@@ -1,4 +1,5 @@
 $light-grey: #cdcdcd
+$grey: #a1a1a1
 $medium-grey: #858585
 $gold: #F9BC2E
 $light-gold: rgba(251, 219, 97, .4)
@@ -17,16 +18,20 @@ h1, h2
   font-weight: normal
 
 
-$input-results-space: 5em
+$input-results-space: 7em
 #search-bar
-  margin-bottom: $input-results-space
+  margin-bottom: $input-results-space / 4
   .button
     background-color: $gold
     color: white
 
-#results
-  animation: come-down .5s
-  animation-timing-function: ease-out
+
+#parsed-query
+  margin-bottom: $input-results-space * 3/4
+  text-align: center
+  color: $grey
+  font-size: 1.15em
+
 
 @keyframes come-down
   0%
@@ -38,6 +43,10 @@ $input-results-space: 5em
     opacity: 1
     transform: translateY(0)
 
+#results
+  animation: come-down .25s
+  animation-timing-function: ease-out
+
 
 .result
   margin-bottom: 3em !important
@@ -45,6 +54,13 @@ $input-results-space: 5em
   .header
     font-weight: normal
     margin-bottom: .25em
+    .extension
+      color: $grey
+      visibility: hidden
+      font-weight: 300
+  &:hover
+    .header .extension
+      visibility: visible
 
   .breadcrumb
     text-transform: uppercase
@@ -55,7 +71,8 @@ $input-results-space: 5em
   .body
     margin-top: 1em
     font-weight: 300
-    mark
+    b
+      font-weight: normal
       background-color: $light-gold
       padding: 0 .25em
     .divider
@@ -65,3 +82,11 @@ $input-results-space: 5em
       letter-spacing: 4px
       font-size: .9em
       padding: 0 3em
+
+  .divider:last-child
+    display: none
+
+
+#no-results
+  text-align: center
+  font-size: 1.35em

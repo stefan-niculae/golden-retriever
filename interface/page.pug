@@ -1,0 +1,50 @@
+doctype 5
+html
+
+head
+  meta(charset='utf-8')
+  title Golden Retriever
+  link(rel='stylesheet', href="{{ url_for('static', filename='lib/semantic.css') }}")
+  link(rel='stylesheet', href="{{ url_for('static', filename='style.css') }}")
+
+body
+  .ui.container
+    h1 Golden Retriever
+
+    form
+      #search-bar.fluid.ui.action.left.icon.input
+        i.search.icon
+        input(type='text', placeholder='Enter some terms...')
+        button.ui.button Search
+
+    if tried_to_search
+      if parsed_query == ''
+        #parsed-query Your query contained only stopwords.
+
+      else
+        #parsed-query(title='Parsed query')=parsed_query
+
+        if results
+          #results
+            for result in results
+              .result.ui.padded.segment
+
+                .ui.header
+                  =result.name
+                  span.extension=result.extension
+
+                .ui.mini.breadcrumb
+                  for folder in result.path
+                    .section=folder
+                    i.right.angle.icon.divider
+
+                .body
+                  for fragment in result.fragments
+                    p!=fragment
+                    .ui.horizontal.divider ···
+        else
+          #no-results No results
+
+
+  script(src="{{ url_for('static', filename='lib/jquery.js') }}")
+  script(src="{{ url_for('static', filename='script.js') }}")

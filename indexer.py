@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-from os import getcwd, mkdir, walk
+from os import mkdir, walk
 from os.path import join, exists, splitext
 from sys import argv
 from textract import process
@@ -14,18 +14,19 @@ from org.apache.lucene.document import Document, Field, FieldType
 from analyzer import Analyzer
 
 
-INDEX_LOCATION = 'documents.index'
+DEFAULT_DOCS_DIR =  'docs'
+DEFAULT_INDEX_DIR = 'docs.index'
 DOC_FORMATS = ['.txt', '.pdf', '.html', '.doc', '.docx',
                '.csv', '.json', '.pptx', '.rtf', '.xls', '.xlsx']
 
 
-def build_index(docs_root, store_dir):
+def build_index(docs_dir, index_dir):
     """
     Indexes files in `docs_root` recursively, placing the built index in `store_dir`
     """
-    if not exists(store_dir):
-        mkdir(store_dir)
-    storage = SimpleFSDirectory(Paths.get(store_dir))  # index kept on disk
+    if not exists(index_dir):
+        mkdir(index_dir)
+    storage = SimpleFSDirectory(Paths.get(index_dir))  # index kept on disk
 
     config = IndexWriterConfig(Analyzer())
     config.setOpenMode(IndexWriterConfig.OpenMode.CREATE)  # overwrite existing index
@@ -33,7 +34,7 @@ def build_index(docs_root, store_dir):
     writer = IndexWriter(storage, config)
 
     print 'Indexing documents:'
-    index_docs(docs_root, writer)
+    index_docs(docs_dir, writer)
 
     print 'Writing index...'
     writer.commit()
@@ -64,7 +65,7 @@ def index_docs(root, writer):
 
             # Build indexed document
             doc = Document()
-            doc.add(Field('name', name, t1))
+            doc.add(Field('name', file_name, t1))
             doc.add(Field('path', directory, t1))
 
             # Read file contents
@@ -75,11 +76,13 @@ def index_docs(root, writer):
 
 
 if __name__ == '__main__':
-    if len(argv) < 2:
-        print 'usage: indexer.py <documents-folder>'
-        exit(1)
+    docs_dir = DEFAULT_DOCS_DIR
+    if len(argv) >= 2:
+        docs_dir = argv[1]
+
+    index_dir = DEFAULT_INDEX_DIR
+    if len(argv) >= 3:
+        index_dir = argv[2]
 
     lucene.initVM()
-
-    build_index(docs_root=argv[1],
-                store_dir=join(getcwd(), INDEX_LOCATION))
+    build_index(docs_dir, index_dir)
