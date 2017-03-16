@@ -40,7 +40,7 @@ def build_searcher(index_dir=DEFAULT_INDEX_DIR):
 class Result(object):
     def __init__(self, file_name, path, fragments):
         self.name, self.extension = splitext(file_name)
-        self.path = path.split('/')
+        self.path = path.split('/')[1:]  # ignore root doc
         self.fragments = [unicode(f) for f in fragments]
 
 def find_results(query, searcher):
