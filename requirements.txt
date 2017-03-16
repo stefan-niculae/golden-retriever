@@ -1,3 +1,0 @@
-lucene
-textract
-pdfminer

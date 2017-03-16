@@ -1,7 +1,14 @@
 # computed index
 *.index
 
-lib-*
+lib
 
 # big files, for testing
 big
+
+# compiled
+interface/*.js
+interface/*.js.map
+interface/*.css
+interface/*.css.map
+interface/*.html
