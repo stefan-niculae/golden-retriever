@@ -18,7 +18,8 @@ def hello(query=None):
         lucene.getVMEnv().attachCurrentThread()
         parsed_query, results = find_results(query, searcher)
         parsed_query = unicode(parsed_query).replace('content:', '')
-        return render_template('page.pug', parsed_query=parsed_query, results=results, tried_to_search=True)
+        return render_template('page.pug', parsed_query=parsed_query, results=results,
+            tried_to_search=True, shown_fragments=4)
 
     return render_template('page.pug')
 

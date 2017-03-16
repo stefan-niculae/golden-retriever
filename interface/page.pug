@@ -36,21 +36,22 @@ body
 
                 .ui.mini.breadcrumb
                   for folder, index in result.path
-                    .section=folder
-                    if index < result.path|length - 1
+                    if index > 0
                       i.right.angle.icon.divider
+                    .section=folder
 
                 .body
                   for fragment, index in result.fragments
-                    if index <= 7
-                      p!=fragment
-                      if index <= 6
+                    if index < shown_fragments
+                      if index > 0
                         .ui.horizontal.divider ···
+                      p!=fragment
+
                     else
                       .ui.horizontal.divider.extra ···
                       p.extra!=fragment
 
-                  if result.fragments|length > 7
+                  if result.fragments|length > shown_fragments
                     .see-more.ui.small.basic.button See all
 
         else

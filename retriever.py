@@ -60,9 +60,10 @@ def find_results(query, searcher):
         stream = TokenSources.getTokenStream('content', content, Analyzer())
         fragments = highlighter.getBestTextFragments(stream, content,
                         MERGE_CONTIGUOUS_FRAGMENTS, MAX_N_FRAGMENTS)
-        fragments = [unicode(f) for f in fragments]
+        fragments = [unicode(f).strip() for f in fragments]
+        fragments = [f for f in fragments if f != '']  # no empty fragments
 
-        if not ''.join(fragments).strip() == '':
+        if not ''.join(fragments) == '':
             results.append(Result(
                 doc.get('name'),
                 doc.get('path'),
