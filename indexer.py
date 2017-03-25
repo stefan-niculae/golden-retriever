@@ -1,5 +1,7 @@
 #! /usr/bin/env python
 
+from __future__ import unicode_literals
+
 from os import mkdir, walk
 from os.path import join, exists, splitext
 from sys import argv
@@ -75,7 +77,7 @@ def index_docs(root, writer):
             writer.addDocument(doc)
 
 
-if __name__ == '__main__':
+def main():
     docs_dir = DEFAULT_DOCS_DIR
     if len(argv) >= 2:
         docs_dir = argv[1]
@@ -86,3 +88,7 @@ if __name__ == '__main__':
 
     lucene.initVM()
     build_index(docs_dir, index_dir)
+
+
+if __name__ == '__main__':
+    main()
