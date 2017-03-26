@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 from os.path import splitext
 from sys import argv
 import re
+from cgi import escape
 
 import lucene
 from java.nio.file import Paths
@@ -22,7 +23,7 @@ from analyzer import Analyzer, tokenize
 from indexer import DEFAULT_INDEX_DIR
 
 MAX_N_DOCS = 50
-FRAGMENT_SIZE = 120
+FRAGMENT_SIZE = 50
 MAX_N_FRAGMENTS = 50
 MAX_DOC_CHARS_TO_ANALYZE = 1000000
 MERGE_CONTIGUOUS_FRAGMENTS = True
@@ -41,43 +42,58 @@ def build_reader(index_dir=DEFAULT_INDEX_DIR):
 
 
 def statistics(word, doc_id, reader):
-    postings = MultiFields.getTermDocsEnum(reader, 'content', BytesRef('mam'))
+    term = Term('content', tokenize(word))
+    term_text = unicode(term).replace('content:', '')
+
+    postings = MultiFields.getTermDocsEnum(reader, 'content', BytesRef(term_text))
     while postings.docID() != doc_id:  # this is bad
         postings.nextDoc()
 
-    term = Term('content', tokenize(word))
     doc_count = reader.docFreq(term)  # in how many docs the term appears
-    term_freq = postings.freq()  # how many times the term appears in this doc
+    term_count = postings.freq()  # how many times the term appears in this doc
 
-    total_term_freq = reader.totalTermFreq(term)  # how many times the term appears in any doc
+    total_term_count = reader.totalTermFreq(term)  # how many times the term appears in any doc
     n_docs = reader.getDocCount('content')  # total number of docs
 
     similarity = ClassicSimilarity()
-    tf = similarity.tf(float(term_freq))  # sqrt(term_freq)
+    tf = similarity.tf(float(term_count))  # sqrt(term_freq)
     # whether the term is is common or rare among all the docs
     idf = similarity.idf(long(doc_count), long(n_docs))  # log((n_docs+1)/(doc_count+1)) + 1
 
-    return unicode(term).replace('content:', ''), tf, idf, total_term_freq
+    return {
+        'term': term_text,
+        'tf':  tf,
+        'term_count': term_count,
+        'idf': idf,
+        'doc_count': doc_count,
+        'total_term_count': total_term_count,
+        'n_docs': n_docs
+    }
 
 
-
-highlighted = re.compile(r"<B>(\w+)</B>")
 class Result(object):
+    # the default html highlighter wraps results in <b> tags
+    highlighted = re.compile(r"<B>(\w+)</B>", re.UNICODE)
+
     def __init__(self, file_name, path, fragments, doc_id, reader):
         self.name, self.extension = splitext(file_name)
         self.path = path.split('/')[1:]  # ignore root doc
 
         self.fragments = []
         for frag in fragments:
-            highlights = set(highlighted.findall(frag))
+            highlights = set(Result.highlighted.findall(frag))
             for word in highlights:
-                term, tf, idf, total_term_freq = statistics(word, doc_id, reader)
-                tooltip = 'tokenized: {},' \
-                          'tf: {:.2g},' \
-                          'idf: {:.2g},' \
-                          'total term freq: {}'.format(term, tf, idf, total_term_freq)
-                frag = frag.replace('<B>' + word,
-                                    '<B data-tooltip="{}">{}'.format(tooltip, word))
+                tooltip = '''
+                <div class="popup">
+                    <div class="term">{term}</div>
+                    <div class="tf">{tf:.2g}<span class="tc">{term_count}</span></div>
+                    <div class="idf">{idf:.2g}<span class="dc">{doc_count}</span></div>
+                    <div class="ttc">{total_term_count}<span class="nd">{n_docs}</span></div>
+                </div>
+                '''.format(**statistics(word, doc_id, reader))
+
+                frag = frag.replace('<B>' + unicode(word),
+                                    '<B data-html=\'%s\'>' % escape(tooltip) + unicode(word))
             self.fragments.append(frag)
 
     def __unicode__(self):

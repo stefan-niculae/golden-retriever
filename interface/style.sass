@@ -79,6 +79,11 @@ $input-results-space: 7em
       font-weight: normal
       background-color: $light-gold
       padding: 0 .25em
+
+    .popup
+      label
+        font-weight: bold
+
     .divider
       &:before, &:after
         opacity: 0  // no lines left and right
@@ -97,3 +102,32 @@ $input-results-space: 7em
 #no-results
   text-align: center
   font-size: 1.35em
+
+.popup
+  .term, .tf, .tc, .idf, .dc, .ttc, .nd
+    &:before, &:after
+      color: $grey
+
+  .term:before
+    content: 'Tokenized: '
+
+  .tf:before
+    content: 'tf = '
+  span.tc:before
+    content: ', it occurs '
+  span.tc:after
+    content: ' times in this doc'
+
+  .idf:before
+    content: 'idf = '
+  span.dc:before
+    content: ', it occurs in '
+  span.dc:after
+    content: ' docs'
+
+  .ttc:before
+    content: 'It occurs '
+  span.nd:before
+    content: ' times in all '
+  span.nd:after
+    content: ' docs'

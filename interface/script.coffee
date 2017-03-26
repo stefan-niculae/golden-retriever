@@ -20,3 +20,6 @@ $(document).keydown (e) ->
   char = String.fromCharCode e.keyCode
   if /[a-z0-9]/i.test char  # alphanumeric
     $('input').focus()
+
+
+$('.body b').popup()
