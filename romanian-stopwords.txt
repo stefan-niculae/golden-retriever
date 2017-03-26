@@ -157,7 +157,6 @@ lor
 lui
 ma
 mai
-mare
 mereu
 mod
 mult

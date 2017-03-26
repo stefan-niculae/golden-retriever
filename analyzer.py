@@ -1,4 +1,7 @@
+# -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+from unicodedata import normalize
+import re
 
 from org.apache.pylucene.analysis import PythonAnalyzer
 from org.apache.lucene.analysis.standard import StandardTokenizer, StandardFilter
@@ -33,14 +36,41 @@ class Analyzer(PythonAnalyzer):
         return StopFilter(stream, additional_stopwords)
 
 
-# pe langa rezultate:
-# pt toti termenii din intrebare, idf-ul lor
-# in document, in paranteza tf-ul lui
-
-
 def tokenize(word):
     stream = Analyzer().tokenStream('content', StringReader(word))
     stream.reset()
     stream.incrementToken()
     return stream.getAttribute(CharTermAttribute.class_).toString()
 
+def transform(query):
+    """
+    >>> transform('si')
+    <strike>si</strike>
+    >>> transform('și')
+    <strike>și</strike>
+    >>> transform('mama')
+    <b>mam</b>a
+    >>> transform('mamă')
+    <b>mam</b>ă
+    >>> transform('mamelor')
+    <b>mam</b>elor
+    >>> transform('coteț')
+    <b>cotet</b>
+    >>> transform('si si')  # not twice
+    <strike>si</strike> <strike>si</strike>
+    >>> transform('o portocala')  # whole words only
+    <strike>o<strike> <b>portocal</b>a
+    """
+    query = normalize('NFKD', query).encode('ascii', 'ignore')
+    transformed_terms = set()
+    for word in query.split():
+        term = tokenize(word)
+        if term in transformed_terms:
+            continue
+        transformed_terms.add(term)
+
+        if term == '':
+            query = re.sub(r'\b%s\b' % word, '<strike>%s</strike>' % word, query)
+        else:
+            query = query.replace(term, '<b>' + term + '</b>')
+    return query

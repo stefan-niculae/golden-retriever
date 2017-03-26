@@ -1,6 +1,6 @@
 # golden-retriever
 
-Information retrieval system for documents in romanian. 
+Information retrieval system for documents in romanian.
 
 ![demo](demo.gif)
 

@@ -18,44 +18,39 @@ body
         input(type='text', placeholder='Enter some terms...')
         button#search.ui.button Search
 
-    if tried_to_search
-      if parsed_query == ''
-        #parsed-query Your query contained only stopwords.
+    #parsed-query(title='Parsed query')!=parsed_query
 
-      else
-        #parsed-query(title='Parsed query')=parsed_query
+    if results
+      #results
+        for result in results
+          .result.ui.padded.segment
 
-        if results
-          #results
-            for result in results
-              .result.ui.padded.segment
+            .ui.header
+              =result.name
+              span.extension=result.extension
 
-                .ui.header
-                  =result.name
-                  span.extension=result.extension
+            .ui.mini.breadcrumb
+              for folder, index in result.path
+                if index > 0
+                  i.right.angle.icon.divider
+                .section=folder
 
-                .ui.mini.breadcrumb
-                  for folder, index in result.path
-                    if index > 0
-                      i.right.angle.icon.divider
-                    .section=folder
+            .body
+              for fragment, index in result.fragments
+                if index < shown_fragments
+                  if index > 0
+                    .ui.horizontal.divider ···
+                  p!=fragment
 
-                .body
-                  for fragment, index in result.fragments
-                    if index < shown_fragments
-                      if index > 0
-                        .ui.horizontal.divider ···
-                      p!=fragment
+                else
+                  .ui.horizontal.divider.extra ···
+                  p.extra!=fragment
 
-                    else
-                      .ui.horizontal.divider.extra ···
-                      p.extra!=fragment
+              if result.fragments|length > shown_fragments
+                .see-more.ui.small.basic.button See all
 
-                  if result.fragments|length > shown_fragments
-                    .see-more.ui.small.basic.button See all
-
-        else
-          #no-results No results
+    else
+      #no-results No results
 
 
   script(src="{{ url_for('static', filename='lib/jquery.js') }}")

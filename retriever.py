@@ -18,12 +18,11 @@ from org.apache.lucene.search.highlight import QueryScorer, SimpleSpanFragmenter
 from org.apache.lucene.util import BytesRef
 from org.apache.lucene.search.similarities import ClassicSimilarity
 
-
-from analyzer import Analyzer, tokenize
+from analyzer import Analyzer, tokenize, transform
 from indexer import DEFAULT_INDEX_DIR
 
 MAX_N_DOCS = 50
-FRAGMENT_SIZE = 50
+FRAGMENT_SIZE = 120
 MAX_N_FRAGMENTS = 50
 MAX_DOC_CHARS_TO_ANALYZE = 1000000
 MERGE_CONTIGUOUS_FRAGMENTS = True
@@ -36,12 +35,13 @@ def build_highlighter(parsed_query):
     highlighter.setTextFragmenter(fragmenter)
     return highlighter
 
+
 def build_reader(index_dir=DEFAULT_INDEX_DIR):
     storage = SimpleFSDirectory(Paths.get(index_dir))
     return DirectoryReader.open(storage)
 
 
-def statistics(word, doc_id, reader):
+def stats_tooltip(word, doc_id, reader):
     term = Term('content', tokenize(word))
     term_text = unicode(term).replace('content:', '')
 
@@ -60,15 +60,15 @@ def statistics(word, doc_id, reader):
     # whether the term is is common or rare among all the docs
     idf = similarity.idf(long(doc_count), long(n_docs))  # log((n_docs+1)/(doc_count+1)) + 1
 
-    return {
-        'term': term_text,
-        'tf':  tf,
-        'term_count': term_count,
-        'idf': idf,
-        'doc_count': doc_count,
-        'total_term_count': total_term_count,
-        'n_docs': n_docs
-    }
+    # mixing concerns like nobody's business
+    return '''
+            <div class="popup">
+                <div class="term">{}</div>
+                <div class="tf">{:.2g}<span class="tc">{}</span></div>
+                <div class="idf">{:.2g}<span class="dc">{}</span></div>
+                <div class="ttc">{}<span class="nd">{}</span></div>
+            </div>
+            '''.format(term_text, tf, term_count, idf, doc_count, total_term_count, n_docs)
 
 
 class Result(object):
@@ -83,15 +83,7 @@ class Result(object):
         for frag in fragments:
             highlights = set(Result.highlighted.findall(frag))
             for word in highlights:
-                tooltip = '''
-                <div class="popup">
-                    <div class="term">{term}</div>
-                    <div class="tf">{tf:.2g}<span class="tc">{term_count}</span></div>
-                    <div class="idf">{idf:.2g}<span class="dc">{doc_count}</span></div>
-                    <div class="ttc">{total_term_count}<span class="nd">{n_docs}</span></div>
-                </div>
-                '''.format(**statistics(word, doc_id, reader))
-
+                tooltip = stats_tooltip(word, doc_id, reader)
                 frag = frag.replace('<B>' + unicode(word),
                                     '<B data-html=\'%s\'>' % escape(tooltip) + unicode(word))
             self.fragments.append(frag)
@@ -102,6 +94,7 @@ class Result(object):
             '/'.join(self.path),
             '\n'.join(self.fragments)
         )
+
 
 def find_results(query, reader):
     """
@@ -120,7 +113,7 @@ def find_results(query, reader):
         content = doc.get('content')
         stream = TokenSources.getTokenStream('content', content, Analyzer())
         fragments = highlighter.getBestTextFragments(stream, content,
-                        MERGE_CONTIGUOUS_FRAGMENTS, MAX_N_FRAGMENTS)
+                                                     MERGE_CONTIGUOUS_FRAGMENTS, MAX_N_FRAGMENTS)
         fragments = [unicode(f).strip() for f in fragments]
         fragments = [f for f in fragments if f != '']  # no empty fragments
 
@@ -134,8 +127,7 @@ def find_results(query, reader):
                 reader
             ))
 
-    parsed = unicode(parsed).replace('content:', '')
-    return parsed, results
+    return results
 
 
 def main():
@@ -153,7 +145,7 @@ def main():
         query=argv[1],
         reader=build_reader(index_dir))
 
-    print 'parsed query:', query
+    print 'parsed query:', transform(query)
     print 'results:\n', '\n\n'.join(unicode(r) for r in results)
 
 
