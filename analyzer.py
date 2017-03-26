@@ -10,8 +10,8 @@ from org.apache.lucene.analysis.miscellaneous import ASCIIFoldingFilter
 from org.apache.lucene.analysis.ro import RomanianAnalyzer
 from org.tartarus.snowball.ext import RomanianStemmer
 from org.apache.lucene.analysis.snowball import SnowballFilter
-from java.io import StringReader
 from org.apache.lucene.analysis.tokenattributes import CharTermAttribute
+from java.io import StringReader
 
 
 class Analyzer(PythonAnalyzer):
@@ -41,6 +41,7 @@ def tokenize(word):
     stream.reset()
     stream.incrementToken()
     return stream.getAttribute(CharTermAttribute.class_).toString()
+
 
 def transform(query):
     """

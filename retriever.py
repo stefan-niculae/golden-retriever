@@ -8,7 +8,6 @@ import re
 from cgi import escape
 
 import lucene
-from java.nio.file import Paths
 from org.apache.lucene.store import SimpleFSDirectory
 from org.apache.lucene.index import DirectoryReader, PostingsEnum, MultiFields, Term
 from org.apache.lucene.queryparser.classic import QueryParser
@@ -17,6 +16,7 @@ from org.apache.lucene.search.highlight import QueryScorer, SimpleSpanFragmenter
     SimpleHTMLFormatter, TokenSources
 from org.apache.lucene.util import BytesRef
 from org.apache.lucene.search.similarities import ClassicSimilarity
+from java.nio.file import Paths
 
 from analyzer import Analyzer, tokenize, transform
 from indexer import DEFAULT_INDEX_DIR
@@ -84,8 +84,8 @@ class Result(object):
             highlights = set(Result.highlighted.findall(frag))
             for word in highlights:
                 tooltip = stats_tooltip(word, doc_id, reader)
-                frag = frag.replace('<B>' + unicode(word),
-                                    '<B data-html=\'%s\'>' % escape(tooltip) + unicode(word))
+                frag = frag.replace('<B>' + word,
+                                    '<B data-html=\'%s\'>' % escape(tooltip) + word)
             self.fragments.append(frag)
 
     def __unicode__(self):

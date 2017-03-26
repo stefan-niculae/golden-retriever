@@ -16,7 +16,7 @@ from org.apache.lucene.document import Document, Field, FieldType
 from analyzer import Analyzer
 
 
-DEFAULT_DOCS_DIR =  'docs'
+DEFAULT_DOCS_DIR  = 'docs'
 DEFAULT_INDEX_DIR = 'docs.index'
 DOC_FORMATS = ['.txt', '.pdf', '.html', '.doc', '.docx',
                '.csv', '.json', '.pptx', '.rtf', '.xls', '.xlsx']
