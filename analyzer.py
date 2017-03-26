@@ -56,21 +56,23 @@ def transform(query):
     <b>mam</b>elor
     >>> transform('coteț')
     <b>cotet</b>
-    >>> transform('si si')  # not twice
-    <strike>si</strike> <strike>si</strike>
+    >>> transform('si si și')  # not twice
+    <strike>si</strike> <strike>si</strike> <strike>si</strike>
     >>> transform('o portocala')  # whole words only
     <strike>o<strike> <b>portocal</b>a
+    >>> transform('o mamă are o fată care manancă o portocală')
+    <strike>o</strike> <b>mam</b>a are <strike>o</strike> <b>fat</b>a care <b>mananc</b>a <strike>o</strike> <b>portocal</b>a
+    >>> transform('la o atunci')
+    <strike>la</strike> <strike>o</strike> <strike>atunci</strike>
     """
     query = normalize('NFKD', query).encode('ascii', 'ignore')
     transformed_terms = set()
     for word in query.split():
         term = tokenize(word)
-        if term in transformed_terms:
-            continue
-        transformed_terms.add(term)
-
         if term == '':
             query = re.sub(r'\b%s\b' % word, '<strike>%s</strike>' % word, query)
-        else:
+        elif term not in transformed_terms:
             query = query.replace(term, '<b>' + term + '</b>')
+            transformed_terms.add(term)
+
     return query
