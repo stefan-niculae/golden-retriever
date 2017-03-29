@@ -2,10 +2,10 @@
 
 Information retrieval system for documents in romanian.
 
-![demo](demo.gif)
+![screenshot](screenshot.png)
 
 ## Features
-  - word stemming
+- word stemming
   - ignores stop-word
   - case-independent
   - parsed query
@@ -13,17 +13,17 @@ Information retrieval system for documents in romanian.
   - explain scoring for each term
 
 ## Build
- - install pylucene
- - `pip install textract pdfminer flask`
- - `npm install jquery semantic` and move them to `interface/lib/semantic.css` and `interface/lib/jquery.js`
+- install pylucene
+- `pip install textract pdfminer flask`
+- `npm install jquery semantic` and move them to `interface/lib/semantic.css` and `interface/lib/jquery.js`
 
 ## Run
 1. `./indexer.py`
 2. `./server.py`
 
 ## Dev
- - `pug`, `coffee`, `sass` for the interface
-PyLucene samples: http://svn.apache.org/viewvc/lucene/pylucene/trunk/samples/
+- `pug`, `coffee`, `sass` for the interface
+  PyLucene samples: http://svn.apache.org/viewvc/lucene/pylucene/trunk/samples/
 
 
 ## Bugs

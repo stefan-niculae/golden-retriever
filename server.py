@@ -21,7 +21,7 @@ def hello(query=None):
         lucene.getVMEnv().attachCurrentThread()
         parsed_query = transform(query)
         results = find_results(query, reader)
-        return render_template('page.pug', parsed_query=parsed_query, results=results, shown_fragments=4)
+        return render_template('page.pug', parsed_query=parsed_query, results=results, shown_fragments=3)
 
     return render_template('page.pug')
 

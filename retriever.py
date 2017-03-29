@@ -22,7 +22,7 @@ from analyzer import Analyzer, tokenize, transform
 from indexer import DEFAULT_INDEX_DIR
 
 MAX_N_DOCS = 50
-FRAGMENT_SIZE = 120
+FRAGMENT_SIZE = 150
 MAX_N_FRAGMENTS = 50
 MAX_DOC_CHARS_TO_ANALYZE = 1000000
 MERGE_CONTIGUOUS_FRAGMENTS = True
