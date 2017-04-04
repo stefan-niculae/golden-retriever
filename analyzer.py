@@ -1,8 +1,11 @@
+#! /usr/bin/env python
 # -*- coding: utf-8 -*-
+
 from __future__ import unicode_literals
 from unicodedata import normalize
 import re
 
+import lucene
 from org.apache.pylucene.analysis import PythonAnalyzer
 from org.apache.lucene.analysis.standard import StandardTokenizer, StandardFilter
 from org.apache.lucene.analysis import LowerCaseFilter, StopFilter
@@ -46,34 +49,49 @@ def tokenize(word):
 def transform(query):
     """
     >>> transform('si')
-    <strike>si</strike>
+    u'<strike>si</strike>'
     >>> transform('și')
-    <strike>și</strike>
+    u'<strike>si</strike>'
     >>> transform('mama')
-    <b>mam</b>a
+    u'<b>mam</b>a'
     >>> transform('mamă')
-    <b>mam</b>ă
+    u'<b>mam</b>a'
     >>> transform('mamelor')
-    <b>mam</b>elor
+    u'<b>mam</b>elor'
     >>> transform('coteț')
-    <b>cotet</b>
+    u'<b>cotet</b>'
     >>> transform('si si și')  # not twice
-    <strike>si</strike> <strike>si</strike> <strike>si</strike>
+    u'<strike>si</strike> <strike>si</strike> <strike>si</strike>'
     >>> transform('o portocala')  # whole words only
-    <strike>o<strike> <b>portocal</b>a
+    u'<strike>o</strike> <b>portocal</b>a'
     >>> transform('o mamă are o fată care manancă o portocală')
-    <strike>o</strike> <b>mam</b>a are <strike>o</strike> <b>fat</b>a care <b>mananc</b>a <strike>o</strike> <b>portocal</b>a
+    u'<strike>o</strike> <b>mam</b>a <strike>are</strike> <strike>o</strike> <b>fat</b>a <strike>care</strike> <b>mananc</b>a <strike>o</strike> <b>portocal</b>a'
     >>> transform('la o atunci')
-    <strike>la</strike> <strike>o</strike> <strike>atunci</strike>
+    u'<strike>la</strike> <strike>o</strike> <strike>atunci</strike>'
     """
-    query = normalize('NFKD', query).encode('ascii', 'ignore')
+    def remove_diacritics(s):
+        return normalize('NFKD', s).encode('ascii', 'ignore')
+
+    query = remove_diacritics(query)
     transformed_terms = set()
     for word in query.split():
         term = tokenize(word)
+
         if term == '':
+            no_diacritics_word = remove_diacritics(unicode(word))
+            if no_diacritics_word in transformed_terms:
+                continue
+            transformed_terms.add(no_diacritics_word)
             query = re.sub(r'\b%s\b' % word, '<strike>%s</strike>' % word, query)
-        elif term not in transformed_terms:
-            query = query.replace(term, '<b>' + term + '</b>')
+        else:
+            if term in transformed_terms:
+                continue
             transformed_terms.add(term)
+            query = query.replace(term, '<b>' + term + '</b>')
 
     return query
+
+
+if __name__ == '__main__':
+    lucene.initVM()
+    import doctest; doctest.testmod(); exit(0)

@@ -5,12 +5,13 @@ Information retrieval system for documents in romanian.
 ![screenshot](screenshot.png)
 
 ## Features
-- word stemming
+  - word stemming
   - ignores stop-word
   - case-independent
   - parsed query
   - highlight terms in fragments
   - explain scoring for each term
+  - abstract score boosting
 
 ## Build
 - install pylucene

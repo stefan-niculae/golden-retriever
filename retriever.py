@@ -11,7 +11,7 @@ import lucene
 from org.apache.lucene.store import SimpleFSDirectory
 from org.apache.lucene.index import DirectoryReader, PostingsEnum, MultiFields, Term
 from org.apache.lucene.queryparser.classic import QueryParser
-from org.apache.lucene.search import IndexSearcher
+from org.apache.lucene.search import IndexSearcher, BooleanQuery, BooleanClause, BoostQuery
 from org.apache.lucene.search.highlight import QueryScorer, SimpleSpanFragmenter, Highlighter, \
     SimpleHTMLFormatter, TokenSources
 from org.apache.lucene.util import BytesRef
@@ -26,6 +26,9 @@ FRAGMENT_SIZE = 150
 MAX_N_FRAGMENTS = 50
 MAX_DOC_CHARS_TO_ANALYZE = 1000000
 MERGE_CONTIGUOUS_FRAGMENTS = True
+
+ABSTRACT_BOOST = 1.0  # how many times bigger log(abstract_score) should be over log(content_score)
+CONTENT_BOOST  = 17.0
 
 
 def build_highlighter(parsed_query):
@@ -73,7 +76,7 @@ def stats_tooltip(word, doc_id, reader):
 
 class Result(object):
     # the default html highlighter wraps results in <b> tags
-    highlighted = re.compile(r"<B>(\w+)</B>", re.UNICODE)
+    highlighted = re.compile(r'<B>(\w+)</B>', re.UNICODE)
 
     def __init__(self, file_name, path, fragments, doc_id, reader):
         self.name, self.extension = splitext(file_name)
@@ -101,10 +104,20 @@ def find_results(query, reader):
     For the given `query`, search the index against the 'content' field in the index.
     """
     searcher = IndexSearcher(reader)
-    parsed = QueryParser('content', Analyzer()).parse(query)
-    highlighter = build_highlighter(parsed)
+    content_query  = QueryParser('content',  Analyzer()).parse(query)
+    highlighter = build_highlighter(content_query)
 
-    hits = searcher.search(parsed, MAX_N_DOCS).scoreDocs
+    abstract_query = QueryParser('abstract', Analyzer()).parse(query)
+    abstract_query = BoostQuery(abstract_query, ABSTRACT_BOOST)  # boost the abstract
+    content_query  = BoostQuery(content_query,  CONTENT_BOOST)
+
+    # query on both the abstract and the content field
+    query_builder = BooleanQuery.Builder()
+    query_builder.add(abstract_query, BooleanClause.Occur.SHOULD)
+    query_builder.add(content_query,  BooleanClause.Occur.MUST)
+    query = query_builder.build()
+
+    hits = searcher.search(query, MAX_N_DOCS).scoreDocs
     results = []
 
     for hit in hits:

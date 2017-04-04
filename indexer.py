@@ -20,6 +20,7 @@ DEFAULT_DOCS_DIR  = 'docs'
 DEFAULT_INDEX_DIR = 'docs.index'
 DOC_FORMATS = ['.txt', '.pdf', '.html', '.doc', '.docx',
                '.csv', '.json', '.pptx', '.rtf', '.xls', '.xlsx']
+MAX_ABSTRACT_LENGTH = 500  # characters
 
 
 def build_index(docs_dir, index_dir):
@@ -43,18 +44,42 @@ def build_index(docs_dir, index_dir):
     writer.close()
 
 
-def index_docs(root, writer):
-    # name and path
-    t1 = FieldType()
-    t1.setStored(True)  # as is value
-    t1.setTokenized(False)
-    t1.setIndexOptions(IndexOptions.DOCS_AND_FREQS)
+def extract_abstract(content):
+    """
+    Abstract is considered the first paragraph (capped to a maximum length)
+    
+    >>> extract_abstract('aaa\\nb')
+    u'aaa'
+    >>> extract_abstract('aaa\\nbbb\\nccc')  # multiple newlines
+    u'aaa'
+    >>> extract_abstract('aaa')  # no newline
+    u'aaa'
+    >>> len(extract_abstract('a' * (2 * MAX_ABSTRACT_LENGTH) + ' \\nb')) == MAX_ABSTRACT_LENGTH  # capped length 
+    True
+    >>> extract_abstract('\\n\\naaa\\nb')  # starts with newlines
+    """
+    content = unicode(content.strip(), encoding='utf-8')
 
-    # content
-    t2 = FieldType()
-    t2.setStored(True)  # to highlight on search results
-    t2.setTokenized(True)  # tokenize words
-    t2.setIndexOptions(IndexOptions.DOCS_AND_FREQS_AND_POSITIONS)
+    first_newline = content.find('\n')
+    if first_newline == -1:  # no newlines
+        first_newline = len(content)  # up to the end
+
+    abstract = content[:first_newline]
+    return abstract[:MAX_ABSTRACT_LENGTH]
+
+
+def index_docs(root, writer):
+    # metadata: name and path
+    metadata = FieldType()
+    metadata.setStored(True)  # as is value
+    metadata.setTokenized(False)
+    metadata.setIndexOptions(IndexOptions.DOCS_AND_FREQS)
+
+    # content: abstract and body
+    content_type = FieldType()
+    content_type.setStored(True)  # to highlight on search results
+    content_type.setTokenized(True)  # tokenize words
+    content_type.setIndexOptions(IndexOptions.DOCS_AND_FREQS_AND_POSITIONS)
 
     for directory, _, file_names in walk(root):
         for file_name in file_names:
@@ -67,12 +92,14 @@ def index_docs(root, writer):
 
             # Build indexed document
             doc = Document()
-            doc.add(Field('name', file_name, t1))
-            doc.add(Field('path', directory, t1))
+            doc.add(Field('name', file_name, metadata))
+            doc.add(Field('path', directory, metadata))
 
             # Read file contents
             content = process(file_path, 'utf-8', method='pdfminer')
-            doc.add(Field('content', content, t2))
+            abstract = extract_abstract(content)
+            doc.add(Field('content',  content,  content_type))
+            doc.add(Field('abstract', abstract, content_type))
 
             writer.addDocument(doc)
 
@@ -91,4 +118,5 @@ def main():
 
 
 if __name__ == '__main__':
+    #import doctest; doctest.testmod(); exit(0)
     main()
