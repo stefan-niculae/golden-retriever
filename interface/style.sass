@@ -107,30 +107,22 @@ $input-results-space: 7em
   font-size: 1.35em
 
 .popup
-  .term, .tf, .tc, .idf, .dc, .ttc, .nd
+  .term, .total-docs
     &:before, &:after
       color: $grey
+
+  table
+    margin-top: 5px
+    margin-bottom: 5px
+
+  td, th
+    padding-right: 10px
+    padding-bottom: 2px
+  td:first-child
+    font-style: italic
 
   .term:before
     content: 'Tokenized: '
 
-  .tf:before
-    content: 'tf = '
-  span.tc:before
-    content: ', it occurs '
-  span.tc:after
-    content: ' times this doc'
-
-  .idf:before
-    content: 'idf = '
-  span.dc:before
-    content: ', it occurs in '
-  span.dc:after
-    content: ' docs'
-
-  .ttc:before
-    content: 'It occurs '
-  span.nd:before
-    content: ' times in all '
-  span.nd:after
-    content: ' docs'
+  .total-docs:before
+    content: 'Number of docs: '

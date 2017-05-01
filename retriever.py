@@ -27,8 +27,8 @@ MAX_N_FRAGMENTS = 50
 MAX_DOC_CHARS_TO_ANALYZE = 1000000
 MERGE_CONTIGUOUS_FRAGMENTS = True
 
-ABSTRACT_BOOST = 1.0  # how many times bigger log(abstract_score) should be over log(content_score)
-CONTENT_BOOST  = 17.0
+ABSTRACT_BOOST = .06  # how many times bigger log(abstract_score) should be over log(content_score)
+CONTENT_BOOST  = 1.
 
 
 def build_highlighter(parsed_query):
@@ -45,33 +45,90 @@ def build_reader(index_dir=DEFAULT_INDEX_DIR):
 
 
 def stats_tooltip(word, doc_id, reader):
+    # content statistics
     term = Term('content', tokenize(word))
     term_text = unicode(term).replace('content:', '')
-
-    postings = MultiFields.getTermDocsEnum(reader, 'content', BytesRef(term_text))
-    while postings.docID() != doc_id:  # this is bad
-        postings.nextDoc()
-
     doc_count = reader.docFreq(term)  # in how many docs the term appears
-    term_count = postings.freq()  # how many times the term appears in this doc
 
     total_term_count = reader.totalTermFreq(term)  # how many times the term appears in any doc
     n_docs = reader.getDocCount('content')  # total number of docs
 
+    postings = MultiFields.getTermDocsEnum(reader, 'content', BytesRef(term_text))
+    while postings.docID() != doc_id:  # this is bad
+        postings.nextDoc()
+    term_count = postings.freq()  # how many times the term appears in this doc
+
     similarity = ClassicSimilarity()
-    tf = similarity.tf(float(term_count))  # sqrt(term_freq)
+    tf   = similarity.tf(float(term_count))  # sqrt(term_freq)
     # whether the term is is common or rare among all the docs
-    idf = similarity.idf(long(doc_count), long(n_docs))  # log((n_docs+1)/(doc_count+1)) + 1
+    idf   = similarity.idf(long(doc_count), long(n_docs))  # log((n_docs+1)/(doc_count+1)) + 1
+
+    # abstract statistics
+    abstract_term = Term('abstract', tokenize(word))
+    abstract_doc_count = reader.docFreq(abstract_term)
+    abstract_total_term_count = reader.totalTermFreq(abstract_term)
+    a_idf = similarity.idf(long(abstract_doc_count), long(n_docs))
+
+    abstract_postings = MultiFields.getTermDocsEnum(reader, 'abstract', BytesRef(term_text))
+    if not abstract_postings:  # the term appears in no document's abstract
+        abstract_term_count = 0
+        a_tf = 1
+    else:
+        while abstract_postings.docID() != doc_id:  # this is bad
+            if abstract_postings.nextDoc() == abstract_postings.NO_MORE_DOCS:
+                abstract_term_count = 0  # it does not appear in this document's abstract
+                a_tf = 1
+                break
+        else:  # no break, it does appear in this document's abstract
+            abstract_term_count = abstract_postings.freq()
+            a_tf = similarity.tf(float(abstract_term_count))
+
+    content_score  = tf   * idf   ** 2 * CONTENT_BOOST
+    abstract_score = a_tf * a_idf ** 2 * ABSTRACT_BOOST
+    # <div class="term">{}<span class="score">{:.2g}</span></div>
+    #             <div class="tf">{:.2g}<span class="a-tc">{}</span><span class="tc">{}</span></div>
+    #             <div class="idf">{:.2g}<span class="a-dc">{}</span><span class="dc">{}</span></div>
+    #             <div class="ttc"><span class="a-ttc">{}</span>{}<span class="nd">{}</span></div>
 
     # mixing concerns like nobody's business
     return '''
             <div class="popup">
-                <div class="term">{}</div>
-                <div class="tf">{:.2g}<span class="tc">{}</span></div>
-                <div class="idf">{:.2g}<span class="dc">{}</span></div>
-                <div class="ttc">{}<span class="nd">{}</span></div>
+                <div class="term">{}</div>     
+                
+                <table>
+                <tr>
+                    <th> </th>
+                    <th>abstr</th>
+                    <th>body</th>
+                    <th>total</th>
+                </tr>
+                
+                <tr><td>this doc</td>   <td>{}</td>     <td>{}</td>     <td>{}</td>     </tr>
+                <tr><td>TF</td>         <td>{:.2g}</td> <td>{:.2g}</td> <td>{:.2g}</td> </tr>
+                
+                <tr><td>nr docs</td>    <td>{}</td>     <td>{}</td>     <td>{}</td>     </tr>
+                <tr><td>IDF</td>        <td>{:.2g}</td> <td>{:.2g}</td> <td>{:.2g}</td> </tr>
+                
+                <tr><td>score</td>      <td>{:.2g}</td> <td>{:.2g}</td> <td><b>{:.2g}</b></td> </tr>
+                <tr><td>all docs</td>   <td>{}</td>     <td>{}</td>     <td>{}</td>     </tr>
+                </table>
+                
+                <div class="total-docs">{}</div>
             </div>
-            '''.format(term_text, tf, term_count, idf, doc_count, total_term_count, n_docs)
+            '''.format(term_text,
+
+                       abstract_term_count, term_count - abstract_term_count, term_count,
+                       a_tf, tf, a_tf * tf,
+
+                       abstract_doc_count, doc_count, doc_count,
+                       a_idf, idf, a_idf * idf,
+
+                       abstract_score, content_score, abstract_score * content_score,
+
+                       abstract_total_term_count, total_term_count - abstract_total_term_count, total_term_count,
+
+                       n_docs
+                       )
 
 
 class Result(object):
