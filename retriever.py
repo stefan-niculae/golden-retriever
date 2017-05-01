@@ -85,10 +85,6 @@ def stats_tooltip(word, doc_id, reader):
 
     content_score  = tf   * idf   ** 2 * CONTENT_BOOST
     abstract_score = a_tf * a_idf ** 2 * ABSTRACT_BOOST
-    # <div class="term">{}<span class="score">{:.2g}</span></div>
-    #             <div class="tf">{:.2g}<span class="a-tc">{}</span><span class="tc">{}</span></div>
-    #             <div class="idf">{:.2g}<span class="a-dc">{}</span><span class="dc">{}</span></div>
-    #             <div class="ttc"><span class="a-ttc">{}</span>{}<span class="nd">{}</span></div>
 
     # mixing concerns like nobody's business
     return '''
